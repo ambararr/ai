@@ -248,7 +248,10 @@ def mover_fichas(ficha_original,ficha_copia):
 
 def obtener_fila_col(posicion):
     x , y= posicion
-  
+
+    if (x < cons.BOARD_POSICION[0] or x >= cons.BOARD_POSICION[0] + cons.COL * cons.CASILLA_SIZE or
+        y < cons.BOARD_POSICION[1] or y >= cons.BOARD_POSICION[1] + cons.ROWS * cons.CASILLA_SIZE):
+        return None, None
 
     #fila y columna posicion
     col = (x - cons.BOARD_POSICION[0]) // cons.CASILLA_SIZE
