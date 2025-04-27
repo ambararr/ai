@@ -1,0 +1,12 @@
+import pygame
+
+HEIGHT = 500
+WIDTH = 600
+NEGRO = ( 0, 0, 0)
+BEIGE = ( 250, 238, 150)
+AMARILLO = (237, 251, 61)
+VERDE = (55, 196, 7)
+ROWS = 8
+COL = 8
+CASILLA_SIZE = 40
+BOARD_POSICION = (50, 85)
