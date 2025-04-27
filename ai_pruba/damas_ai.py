@@ -13,7 +13,7 @@ pygame.display.set_caption("Damas")
 
 run = True
 
-surface = pygame.image.load('img/tablero_madera.jpeg')
+surface = pygame.image.load('ai_pruba/IMG/TABLERO_MADERA.jpeg')
 font = pygame.font.SysFont('arial', 30, bold= True)
 
 
@@ -73,7 +73,7 @@ def fichas_player(row,col):
 
 def tablero():
     #fondo
-    surface = pygame.image.load('img/tablero_madera.jpeg')
+    surface = pygame.image.load('ai_pruba/IMG/TABLERO_MADERA.jpeg')
     ventana.blit(surface, (0,0)) 
     
     #tablero
@@ -245,10 +245,13 @@ while run:
                             FICHA_SELECCIONADA = None
                             POSIBLE_MOV = []
                         else:
-                            
-                            if tablero_matriz[row][col] != 0:
-                                FICHA_SELECCIONADA = (row, col)
-                                POSIBLE_MOV = calcular_posmov(row, col)
+                            try:
+                                if tablero_matriz[row][col] != 0:
+                                    FICHA_SELECCIONADA = (row, col)
+                                    POSIBLE_MOV = calcular_posmov(row, col)
+                            except IndexError:
+                                pass
+
                     else:
                         if tablero_matriz[row][col] != 0:
                             FICHA_SELECCIONADA = (row, col)
