@@ -164,7 +164,18 @@ def tablero():
  #   turno_jdr = pygame.Rect(415, 250, 150, 125)
   #  pygame.draw.rect(ventana, (142, 81, 26 ), turno_jdr)
 
-   
+def calcular_posmov(row,col):
+    POSIBLE_MOV = []
+    ficha = tablero_matriz [row][col]
+
+    if ficha == 1: #AI
+        direccion_mov = [(1 , -1), (1, 1)] 
+        jugador_contrario = 2
+    elif ficha == 2: #juagadpr
+        direccion_mov = [(-1 , -1), (-1, 1)] 
+        jugador_contrario = 1
+    else :
+        return POSIBLE_MOV
     
    
    
