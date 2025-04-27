@@ -97,7 +97,18 @@ def tablero():
             if ficha != 0:
                 x = cons.BOARD_POSICION[0] + col * cons.CASILLA_SIZE + cons.CASILLA_SIZE // 2
                 y = cons.BOARD_POSICION[1] + row * cons.CASILLA_SIZE + cons.CASILLA_SIZE // 2
-                color = cons.AMARILLO if ficha == 1 else cons.VERDE
+                if ficha == 1:
+                    color = cons.AMARILLO
+                elif ficha == 2:
+                    color = cons.VERDE
+                elif ficha == 3:
+                    color = cons.AMARILLO_NEON
+                    pygame.draw.circle(ventana, cons.BEIGE, (x, y), 18)
+                    pygame.draw.circle(ventana, cons.NEGRO, (x, y), 16)
+                else:
+                    color = cons.VERDE_NEON
+                    pygame.draw.circle(ventana, cons.BEIGE, (x, y), 18)
+                    pygame.draw.circle(ventana, cons.NEGRO, (x, y), 16)
                 pygame.draw.circle(ventana, color,(x,y),15)
     #fichas_ai(row,col)
     '''
@@ -174,12 +185,31 @@ def tablero():
 def calcular_posmov(row,col):
     POSIBLE_MOV = []
     ficha = tablero_matriz [row][col]
+    direccion_mov = []
 
     if ficha == 1: #AI 
         direccion_mov = [(1 , -1), (1, 1)] #se mueve haciaabajo
         jugador_contrario = 2
     elif ficha == 2: #juagadpr
         direccion_mov = [(-1 , -1), (-1, 1)]  #se mueve hacia arriba
+        jugador_contrario = 1
+    elif ficha == 3: #corona_AI
+        for step in range(1, 9):
+            direccion_mov.extend([
+                (-step, -step),
+                (-step, step),
+                (step, -step),
+                (step, step)
+            ])
+        jugador_contrario = 2
+    elif ficha == 4: #corona_jugdor
+        for step in range(1, 9):
+            direccion_mov.extend([
+                (-step, -step),
+                (-step, step),
+                (step, -step),
+                (step, step)
+            ])
         jugador_contrario = 1
     else :
         return POSIBLE_MOV
@@ -226,6 +256,16 @@ def obtener_fila_col(posicion):
     
     return row,col
 
+def coronar_fichas():
+    for col in range(cons.COL):
+        # Verificar si fichas del jugador (2) llegaron a la primera fila
+        if tablero_matriz[0][col] == 2:
+            tablero_matriz[0][col] = 4
+        
+        # Verificar si fichas de la AI (1) llegaron a la última fila
+        if tablero_matriz[cons.ROWS-1][col] == 1:
+            tablero_matriz[cons.ROWS-1][col] = 3
+
 
 inicializar_tablero()
 while run:
@@ -242,6 +282,7 @@ while run:
                         
                         if (row, col) in POSIBLE_MOV:
                             mover_fichas(FICHA_SELECCIONADA, (row, col))
+                            coronar_fichas()
                             FICHA_SELECCIONADA = None
                             POSIBLE_MOV = []
                         else:
