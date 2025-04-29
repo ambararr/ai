@@ -1,3 +1,18 @@
+'''import pygame
+
+HEIGHT = 500
+WIDTH = 600
+NEGRO = ( 0, 0, 0)
+BEIGE = ( 250, 238, 150)
+AMARILLO = (237, 251, 61)
+VERDE = (55, 196, 7)
+BORDE_CIR = (255, 0, 0)
+MOV = (0, 0, 255)
+ROWS = 8
+COL = 8
+CASILLA_SIZE = 40
+BOARD_POSICION = (50, 85)
+'''
 import pygame
 
 HEIGHT = 500
@@ -8,6 +23,7 @@ AMARILLO = (237, 251, 61)
 AMARILLO_NEON = (255, 215, 0)
 VERDE = (55, 196, 7)
 VERDE_NEON = (50, 200, 50)
+CAFE_BOTON = (99, 53, 11 )
 BORDE_CIR = (255, 0, 0)
 MOV = (0, 0, 255)
 ROWS = 8

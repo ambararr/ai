@@ -17,8 +17,8 @@ run = True
 turno = 2 #turno jugador 
 obligado = False
 surface = pygame.image.load('ai_pruba\IMG\TABLERO_MADERA.jpeg')
-corona_amarilla = pygame.image.load('ai_pruba\IMG/CORONA_AMARILLOO.png')
-corona_verde = pygame.image.load('ai_pruba\IMG/CORONA_VERDEE.png')
+corona_amarilla = pygame.image.load('ai_pruba\IMG\CORONA_AMARILLOO.png')
+corona_verde = pygame.image.load('ai_pruba\IMG\CORONA_VERDEE.png')
 
 font = pygame.font.SysFont('arial', 30, bold= True)
 
@@ -26,6 +26,7 @@ font = pygame.font.SysFont('arial', 30, bold= True)
 FICHA_SELECCIONADA = None
 POSIBLE_MOV = []
 boton = None
+
 # Matriz para representar el tablero
 tablero_matriz = [[0 for _ in range(cons.COL)] for _ in range(cons.ROWS)]
 
@@ -85,6 +86,9 @@ def tablero():
                     pygame.draw.circle(ventana, cons.BEIGE, (x, y), 18)
                     pygame.draw.circle(ventana, cons.NEGRO, (x, y), 16)
                 pygame.draw.circle(ventana, color,(x,y),15)
+    '''
+    TURNOS
+    '''
         
     if turno == 1:
             
@@ -127,7 +131,7 @@ def tablero():
         pygame.draw.circle(ventana, cons.MOV, (x, y), 10)
     
     boton = pygame.Rect(100, 430 , 200, 55)
-    pygame.draw.rect(ventana, (99, 53, 11 ) , boton)
+    pygame.draw.rect(ventana, cons.CAFE_BOTON , boton)
     title_boton = font.render("Reiniciar", True, cons.BEIGE)
     ventana.blit(title_boton,(boton.x + 30, boton.y +10))
     return boton
@@ -257,12 +261,19 @@ def coronar_fichas():
         if tablero_matriz[cons.ROWS-1][col] == 1:
             tablero_matriz[cons.ROWS-1][col] = 3
 
+    '''
+    TURNOS
+    '''
 def fichas_turno(ficha, turno):
     if turno == 1:
         return ficha in (1, 3 ) #1 son las fichas 3 fichas coronadas
     elif turno ==2:
         return ficha in (2,4)  #2 son las fichas 4 fichas coronadas
     return False
+
+'''
+    TURNOS
+    '''
 
 def verificar_ganador(turno):
     #cuanta ficha c/u
@@ -276,40 +287,42 @@ def verificar_ganador(turno):
             elif ficha in (2, 4):  # jugador
                 fichas_jugador += 1
 
-    if fichas_ai == 0 and turno ==1:
+    if fichas_ai == 0:
         return 2  
-    elif fichas_jugador == 0 and turno ==2:
+    elif fichas_jugador == 0:
         return 1  
     else:
         return 0  
 
+'''
+TURNOS
+'''
 def ganador(winner):
     if winner == 1:
-        texto = pygame.Rect(100, 20 , 200, 55)
+        texto = pygame.Rect(100, 20 , 300, 60)
         pygame.draw.rect(ventana, cons.BEIGE, texto)
-        title_boton = font.render("Perdiste", True, cons.AMARILLO)
+        title_boton = font.render("Ganaste", True, cons.AMARILLO)
         ventana.blit(title_boton,(texto.x + 35, texto.centery -20)) 
         corona = corona_amarilla
-        corona = pygame.transform.scale(corona, (texto.width , texto.height  ))
-        corona_rect = corona.get_rect(center= texto. center)
+        corona = pygame.transform.scale(corona,  (80, 80))
+        corona_rect = corona.get_rect()
+        corona_rect.left = texto.left - 100
+        corona_rect.centery = texto.centery
         ventana.blit(corona, corona_rect)   
         pygame.display.update()
         pygame.time.delay(4000)
 
     elif winner == 2:
-        texto = pygame.Rect(100, 20 , 200, 55)
+        texto = pygame.Rect(100, 20 , 300, 60)
         pygame.draw.rect(ventana, cons.BEIGE, texto)
         title_boton = font.render("Ganaste", True, cons.VERDE)
-        ventana.blit(title_boton,(texto.x + 35, texto.centery -20)) 
+        ventana.blit(title_boton,(texto.x + 40, texto.centery -20)) 
         corona = corona_verde
-        corona = pygame.transform.scale(corona, (texto.width, texto.height))
-        corona_rect = corona.get_rect(center= texto. center)
+        corona = pygame.transform.scale(corona,  (80, 80))
+        corona_rect = corona.get_rect()
+        corona_rect.left = texto.left - 100
+        corona_rect.centery = texto.centery
         ventana.blit(corona, corona_rect)   
-        pygame.display.update()
-        pygame.time.delay(4000)
-
-        
-        ventana.blit(corona, corona_rect)
         pygame.display.update()
         pygame.time.delay(4000)
 
@@ -338,101 +351,369 @@ def analizar_tablero(tablero):
     return score
 
 
+def analizar_TodosMov(tablero,turno):
+    movimientos = []
+
+    for row in range(cons.ROWS):
+        for col in range(cons.COL):
+            ficha = tablero[row][col]
+            if (turno == 1 and ficha in (1, 3)) or (turno == 2 and ficha in (2, 4)):
+
+                mov_posible = calcular_posmov(row, col)
+                for mov in mov_posible:
+                    
+                    tablero_copia = sobreponer_mov(tablero,(row,col),mov)
+                    movimientos.append((tablero_copia,(row,col),mov))
+    return movimientos
+
+
+def minimax(tablero, depth, isMaximaxing):
+    if depth == 0:
+        return analizar_tablero(tablero), tablero
+
+    turno_actual = 1 if isMaximaxing else 2
+    movimientos = analizar_TodosMov(tablero, turno_actual)
+
+    #movimientos = analizar_TodosMov(tablero, turno)
+    
+    if not movimientos:
+        return analizar_tablero(tablero), tablero
+
+    mejor_mov = None
+
+    if isMaximaxing:
+        maxEval = float('-inf')
+        for mov in movimientos:
+            evaluacion, _ = minimax(mov[0], depth - 1, False)
+            if evaluacion > maxEval:
+                maxEval = evaluacion
+                mejor_mov = mov
+        return maxEval, mejor_mov
+    else:
+        minEval = float('inf')
+        for mov in movimientos:
+            evaluacion, _ = minimax(mov[0], depth - 1, True)
+            if evaluacion < minEval:
+                minEval = evaluacion
+                mejor_mov = mov
+        return minEval, mejor_mov
+
+
 inicializar_tablero()
+
+
 while run:
-    print(turno)
+    print("Valor real de 'turno':", turno)
+    print("Turno actual:", "IA (1)" if turno == 1 else "Jugador (2)")
+
     for event in pygame.event.get():
-
-        #prueba para ver si funciona el copy QUITARRRR
-        """
-        keys = pygame.key.get_pressed()
-        if keys[pygame.K_t]:  # Presiona la tecla T para probar
-            print("\n=PRUEBA DE COPIA DE TABLERO =")
-
-            origen = (2, 0)  # Cambia por una ficha amarilla válida
-            destino = (3, 1)
-
-            print("TABLERO ORIGINAL:")
-            for fila in tablero_matriz:
-                print(fila)
-
-            copia = sobreponer_mov(tablero_matriz, origen, destino)
-
-            print("\nTABLERO COPIA (con movimiento):")
-            for fila in copia:
-                print(fila)
-
-            print("\nVerifica que el original no cambió.")
-            pygame.time.delay(1000)  
-        """
-     
-        
         if event.type == pygame.QUIT:
             run = False
             pygame.quit()
+
         if event.type == pygame.MOUSEBUTTONDOWN:
-                posicion = pygame.mouse.get_pos()
+            posicion = pygame.mouse.get_pos()
 
-                
+            # Boton de reinicio
+            if boton.collidepoint(posicion):
+                inicializar_tablero()
+                turno = 2
+                FICHA_SELECCIONADA = None
+                POSIBLE_MOV = []
+                continue
 
+            # permitir  si es turno del jugador
+            if turno == 2:
                 row, col = obtener_fila_col(posicion)
 
-                if boton.collidepoint(posicion):
+                if row is not None and col is not None:
+                    ficha = tablero_matriz[row][col]
+
+                    if FICHA_SELECCIONADA:
+                        if (row, col) in POSIBLE_MOV:
+                            score_antes = analizar_tablero(tablero_matriz)
+                            mover_fichas(FICHA_SELECCIONADA, (row, col))
+                            score_despues = analizar_tablero(tablero_matriz)
+                            coronar_fichas()
+                            FICHA_SELECCIONADA = None
+                            POSIBLE_MOV = []
+
+                            # Verificar ganador después del movimiento del jugador
+                            winner = verificar_ganador(turno)
+                            if winner != 0:
+                                ganador(winner)
+                                inicializar_tablero()
+                                turno = 2
+                                FICHA_SELECCIONADA = None
+                                POSIBLE_MOV = []
+                                boton = tablero()
+                                pygame.display.update()
+                                continue
+
+                            if abs(score_despues - score_antes) < 1:
+                                turno = 1
+                                boton = tablero()
+                                pygame.display.update()
+                            else:
+                                nuevos_movimientos = calcular_posmov(row, col, solo_capturas=True)
+                                if nuevos_movimientos:
+                                    FICHA_SELECCIONADA = (row, col)
+                                    POSIBLE_MOV = nuevos_movimientos
+                                    obligado = True
+                                else:
+                                    turno = 1
+                                    obligado = False
+                                    boton = tablero()
+                                    pygame.display.update()
+                        else:
+                            if ficha != 0 and fichas_turno(ficha, turno):
+                                if not obligado or (obligado and (row, col) == FICHA_SELECCIONADA):
+                                    FICHA_SELECCIONADA = (row, col)
+                                    POSIBLE_MOV = calcular_posmov(row, col)
+
+                    else:
+                        if ficha != 0 and fichas_turno(ficha, turno):
+                            FICHA_SELECCIONADA = (row, col)
+                            POSIBLE_MOV = calcular_posmov(row, col)
+
+    # turno ia
+    if turno == 1:
+        boton = tablero()  
+        pygame.display.update()
+        pygame.time.delay(700)  
+
+        print("IA pensando...")
+        _, mejor_movimiento = minimax(tablero_matriz, 3, True)
+
+        if mejor_movimiento:
+            _, origen, destino = mejor_movimiento
+            ficha = tablero_matriz[origen[0]][origen[1]]
+
+            if fichas_turno(ficha, 1):
+                mover_fichas(origen, destino)
+                coronar_fichas()
+
+                # Verificar ganador 
+                winner = verificar_ganador(turno)
+                if winner != 0:
+                    ganador(winner)
                     inicializar_tablero()
                     turno = 2
                     FICHA_SELECCIONADA = None
                     POSIBLE_MOV = []
-                    
+                    boton = tablero()
+                    pygame.display.update()
+                    continue
+
+                turno = 2
+                boton = tablero()
+                pygame.display.update()
+            else:
+                print("⚠️ Movimiento inválido de IA (ficha no es amarilla)")
+        else:
+            print("⚠️ La IA no encontró ningún movimiento posible")
+
+    boton = tablero()
+    pygame.display.update()
+
+'''
+falta mostrar si ganaste
+
+while run:
+    print("Valor real de 'turno':", turno)
+    print("Turno actual:", "IA (1)" if turno == 1 else "Jugador (2)")
+
+    for event in pygame.event.get():
+        if event.type == pygame.QUIT:
+            run = False
+            pygame.quit()
+
+        if event.type == pygame.MOUSEBUTTONDOWN:
+            posicion = pygame.mouse.get_pos()
+
+            # Permitir reinicio en cualquier turno
+            if boton.collidepoint(posicion):
+                inicializar_tablero()
+                turno = 2
+                FICHA_SELECCIONADA = None
+                POSIBLE_MOV = []
+                continue
+
+            # SOLO PERMITIR JUGADA DEL JUGADOR EN SU TURNO
+            if turno == 2:
+                row, col = obtener_fila_col(posicion)
+
                 if row is not None and col is not None:
                     ficha = tablero_matriz[row][col]
 
-                    #if turno == 2
                     if FICHA_SELECCIONADA:
-                            
-                            if (row, col) in POSIBLE_MOV:
+                        if (row, col) in POSIBLE_MOV:
+                            score_antes = analizar_tablero(tablero_matriz)
+                            mover_fichas(FICHA_SELECCIONADA, (row, col))
+                            score_despues = analizar_tablero(tablero_matriz)
+                            coronar_fichas()
+                            FICHA_SELECCIONADA = None
+                            POSIBLE_MOV = []
 
-                                score_antes = analizar_tablero(tablero_matriz)
-                                mover_fichas(FICHA_SELECCIONADA, (row, col))
-                                score_despues = analizar_tablero(tablero_matriz)
-                                coronar_fichas()
-                                FICHA_SELECCIONADA = None
-                                POSIBLE_MOV = []
-                                verificar_ganador(turno)
-                                if abs(score_despues - score_antes) < 1:
-                                    turno = 2 if turno == 1 else 1
-                                else:
-                                    nuevos_movimientos = calcular_posmov(row, col, solo_capturas=True)
-                                    if nuevos_movimientos:
-                                        FICHA_SELECCIONADA = (row, col)
-                                        POSIBLE_MOV = nuevos_movimientos
-                                        obligado = True
-                                    else:
-                                        turno = 2 if turno == 1 else 1
-                                        obligado = False
+                            winner = verificar_ganador(turno)
+                            if winner != 0:
+                                ganador(winner)
+                                inicializar_tablero()
+                                turno = 2
+                                continue
 
+                            if abs(score_despues - score_antes) < 1:
+                                turno = 1  # Cambia a IA
+                                boton = tablero()
+                                pygame.display.update()
                             else:
-                                try:
-                                    if ficha != 0 and fichas_turno(ficha , turno):
-                                        if not obligado or (obligado and (row, col) == FICHA_SELECCIONADA):
-                                            FICHA_SELECCIONADA = (row, col)
-                                            POSIBLE_MOV = calcular_posmov(row, col)
-                                except IndexError:
-                                    pass
+                                nuevos_movimientos = calcular_posmov(row, col, solo_capturas=True)
+                                if nuevos_movimientos:
+                                    FICHA_SELECCIONADA = (row, col)
+                                    POSIBLE_MOV = nuevos_movimientos
+                                    obligado = True
+                                else:
+                                    turno = 1  # Cambia a IA
+                                    obligado = False
+                                    boton = tablero()
+                                    pygame.display.update()
+
+                        else:
+                            if ficha != 0 and fichas_turno(ficha, turno):
+                                if not obligado or (obligado and (row, col) == FICHA_SELECCIONADA):
+                                    FICHA_SELECCIONADA = (row, col)
+                                    POSIBLE_MOV = calcular_posmov(row, col)
 
                     else:
-                            if ficha != 0 and fichas_turno(ficha, turno):
+                        if ficha != 0 and fichas_turno(ficha, turno):
+                            FICHA_SELECCIONADA = (row, col)
+                            POSIBLE_MOV = calcular_posmov(row, col)
+
+    if turno == 1:
+        pygame.time.delay(500)  # espera 500 milisegundos = 0.5 segundos
+
+        print("IA pensando...")
+        _, mejor_movimiento = minimax(tablero_matriz, 3, True)
+
+        if mejor_movimiento:
+            _, origen, destino = mejor_movimiento
+            ficha = tablero_matriz[origen[0]][origen[1]]
+
+            print("IA va a mover de:", origen, "con ficha:", ficha)
+
+            if fichas_turno(ficha, 1):
+                mover_fichas(origen, destino)
+                coronar_fichas()
+
+                winner = verificar_ganador(turno)
+                if winner != 0:
+                    ganador(winner)
+                    inicializar_tablero()
+                    turno = 2
+                    FICHA_SELECCIONADA = None
+                    POSIBLE_MOV = []
+                    continue
+
+                turno = 2  # ← Cambiar a turno del jugador
+            else:
+                print("⚠️ Movimiento inválido de IA (ficha no es amarilla)")
+    else:
+        print("⚠️ La IA no encontró ningún movimiento posible")
+
+    boton = tablero()
+    pygame.display.update()
+'''
+'''
+este jala el ia pero no tablero
+
+while run:
+    print("Turno actual:", "IA (1)" if turno == 1 else "Jugador (2)")
+
+    for event in pygame.event.get():
+        if event.type == pygame.QUIT:
+            run = False
+            pygame.quit()
+
+        if turno == 2 and event.type == pygame.MOUSEBUTTONDOWN:
+            posicion = pygame.mouse.get_pos()
+            row, col = obtener_fila_col(posicion)
+
+            if boton.collidepoint(posicion):
+                inicializar_tablero()
+                turno = 2
+                FICHA_SELECCIONADA = None
+                POSIBLE_MOV = []
+                continue
+
+            if row is not None and col is not None:
+                ficha = tablero_matriz[row][col]
+
+                if FICHA_SELECCIONADA:
+                    if (row, col) in POSIBLE_MOV:
+                        score_antes = analizar_tablero(tablero_matriz)
+                        mover_fichas(FICHA_SELECCIONADA, (row, col))
+                        score_despues = analizar_tablero(tablero_matriz)
+                        coronar_fichas()
+                        FICHA_SELECCIONADA = None
+                        POSIBLE_MOV = []
+
+                        winner = verificar_ganador(turno)
+                        if winner != 0:
+                            ganador(winner)
+                            inicializar_tablero()
+                            turno = 2
+                            continue
+
+                        if abs(score_despues - score_antes) < 1:
+                            turno = 1
+                        else:
+                            nuevos_movimientos = calcular_posmov(row, col, solo_capturas=True)
+                            if nuevos_movimientos:
+                                FICHA_SELECCIONADA = (row, col)
+                                POSIBLE_MOV = nuevos_movimientos
+                                obligado = True
+                            else:
+                                turno = 1
+                                obligado = False
+
+                    else:
+                        if ficha != 0 and fichas_turno(ficha, turno):
+                            if not obligado or (obligado and (row, col) == FICHA_SELECCIONADA):
                                 FICHA_SELECCIONADA = (row, col)
                                 POSIBLE_MOV = calcular_posmov(row, col)
-                     
-        
-    boton = tablero()  
+
+                else:
+                    if ficha != 0 and fichas_turno(ficha, turno):
+                        FICHA_SELECCIONADA = (row, col)
+                        POSIBLE_MOV = calcular_posmov(row, col)
+
+    # Turno de la IA
+    if turno == 1:
+        print("IA pensando...")
+        _, mejor_movimiento = minimax(tablero_matriz, 3, True)
+
+        if mejor_movimiento:
+            _, origen, destino = mejor_movimiento
+
+            if fichas_turno(tablero_matriz[origen[0]][origen[1]], 1):
+                mover_fichas(origen, destino)
+                coronar_fichas()
+
+                winner = verificar_ganador(turno)
+                if winner != 0:
+                    ganador(winner)
+                    inicializar_tablero()
+                    turno = 2
+                    FICHA_SELECCIONADA = None
+                    POSIBLE_MOV = []
+                    continue
+
+                turno = 2
+            else:
+                print("⚠️ Movimiento inválido de IA (ficha no es amarilla)")
+        else:
+            print("⚠️ La IA no encontró ningún movimiento posible")
+
+    boton = tablero()
     pygame.display.update()
-
-    winner = verificar_ganador(turno)
-    if winner != 0:
-        ganador(winner)
-        inicializar_tablero()
-        turno = 2
-        FICHA_SELECCIONADA = None
-        POSIBLE_MOV = []
-
+'''
