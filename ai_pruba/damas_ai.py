@@ -509,7 +509,7 @@ def calcular_posmov(row,col):
                     if 0 <= salto_row < cons.ROWS and 0 <= salto_col < cons.COL:
                             if tablero_matriz[salto_row][salto_col] == 0:
                                 POSIBLE_MOV.append((salto_row, salto_col))
-                            break
+                            else: break
                 if ficha in (1, 2):
                     break
 
@@ -520,14 +520,22 @@ def mover_fichas(ficha_original,ficha_copia):
     ficha_original_row , ficha_original_col = ficha_original
     ficha_copia_row, ficha_copia_col = ficha_copia
     
-
     ficha = tablero_matriz[ficha_original_row][ficha_original_col]
 
+    # Determinar dirección del movimiento
+    direccion_row = 1 if ficha_copia_row > ficha_original_row else -1
+    direccion_col = 1 if ficha_copia_col > ficha_original_col else -1
+
     #quitar ficha contraria
-    if abs(ficha_copia_row - ficha_original_row) == 2 and abs(ficha_copia_col - ficha_original_col) == 2:
-        fila_comida = (ficha_original_row + ficha_copia_row) // 2
-        col_comida = (ficha_original_col + ficha_copia_col) // 2
-        tablero_matriz[fila_comida][col_comida] = 0  # Eliminar ficha comida
+    if abs(ficha_copia_row - ficha_original_row) >= 2:
+        current_row, current_col = ficha_original_row + direccion_row, ficha_original_col + direccion_col
+         # Recorrer la diagonal hasta llegar al destino
+        while (current_row != ficha_copia_row) or (current_col != ficha_copia_col):
+            # Si encontramos una ficha contraria, la eliminamos
+            if tablero_matriz[current_row][current_col] != 0:
+                tablero_matriz[current_row][current_col] = 0
+            current_row += direccion_row
+            current_col += direccion_col
 
     tablero_matriz[ficha_copia_row][ficha_copia_col] = ficha
     tablero_matriz[ficha_original_row][ficha_original_col] = 0
