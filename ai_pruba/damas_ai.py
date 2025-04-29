@@ -15,6 +15,7 @@ pygame.display.set_caption("Damas")
 run = True
 
 turno = 2 #turno jugador 
+obligado = False
 surface = pygame.image.load('ai_pruba\IMG\TABLERO_MADERA.jpeg')
 corona_amarilla = pygame.image.load('ai_pruba\IMG/CORONA_AMARILLOO.png')
 corona_verde = pygame.image.load('ai_pruba\IMG/CORONA_VERDEE.png')
@@ -29,6 +30,10 @@ boton = None
 tablero_matriz = [[0 for _ in range(cons.COL)] for _ in range(cons.ROWS)]
 
 def inicializar_tablero():
+    for row in range(cons.COL): #limpia el tablero
+        for col in range(cons.ROWS):
+            tablero_matriz[row][col] = 0
+
     for row in range(3):
         for col in range(cons.COL):
             if (row + col) % 2 == 0:
@@ -282,7 +287,7 @@ def ganador(winner):
     if winner == 1:
         texto = pygame.Rect(100, 20 , 200, 55)
         pygame.draw.rect(ventana, cons.BEIGE, texto)
-        title_boton = font.render("Ganaste", True, cons.AMARILLO)
+        title_boton = font.render("Perdiste", True, cons.AMARILLO)
         ventana.blit(title_boton,(texto.x + 35, texto.centery -20)) 
         corona = corona_amarilla
         corona = pygame.transform.scale(corona, (texto.width , texto.height  ))
@@ -386,22 +391,31 @@ while run:
                             
                             if (row, col) in POSIBLE_MOV:
 
-                                
+                                score_antes = analizar_tablero(tablero_matriz)
                                 mover_fichas(FICHA_SELECCIONADA, (row, col))
+                                score_despues = analizar_tablero(tablero_matriz)
                                 coronar_fichas()
                                 FICHA_SELECCIONADA = None
                                 POSIBLE_MOV = []
                                 verificar_ganador(turno)
-                                if turno == 1:
-                                    turno = 2
-                                elif turno == 2:
-                                    turno = 1
+                                if abs(score_despues - score_antes) < 1:
+                                    turno = 2 if turno == 1 else 1
+                                else:
+                                    nuevos_movimientos = calcular_posmov(row, col, solo_capturas=True)
+                                    if nuevos_movimientos:
+                                        FICHA_SELECCIONADA = (row, col)
+                                        POSIBLE_MOV = nuevos_movimientos
+                                        obligado = True
+                                    else:
+                                        turno = 2 if turno == 1 else 1
+                                        obligado = False
 
                             else:
                                 try:
                                     if ficha != 0 and fichas_turno(ficha , turno):
-                                        FICHA_SELECCIONADA = (row, col)
-                                        POSIBLE_MOV = calcular_posmov(row, col)
+                                        if not obligado or (obligado and (row, col) == FICHA_SELECCIONADA):
+                                            FICHA_SELECCIONADA = (row, col)
+                                            POSIBLE_MOV = calcular_posmov(row, col)
                                 except IndexError:
                                     pass
 
