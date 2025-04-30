@@ -245,7 +245,7 @@ def obtener_fila_col(posicion):
         y < cons.BOARD_POSICION[1] or y >= cons.BOARD_POSICION[1] + cons.ROWS * cons.CASILLA_SIZE):
         return None, None
 
-    #fila y columna posicion
+    #fila y columna posicion / conversion x,y a matriz
     col = (x - cons.BOARD_POSICION[0]) // cons.CASILLA_SIZE
     row = (y - cons.BOARD_POSICION[1]) // cons.CASILLA_SIZE  
     
@@ -335,8 +335,56 @@ def sobreponer_mov(tablero, origen , destino):
     tablero_copia[destino[0]][destino[1]]  = ficha
     return tablero_copia
 
-#ai mira el tablero
+#ai mira el tablero - valores favorables
 def analizar_tablero(tablero):
+    score = 0
+    for row in range(cons.ROWS):
+        for col in range(cons.COL):
+            ficha = tablero[row][col]
+            
+            # Valor base de las fichas
+            if ficha == 1:  # ai ficha normal
+                score += 5
+                # Bonus por estar cerca de coronar (fila 6 o 7)
+                if row >= 5:
+                    score += 2
+                # Bonus por estar en el centro
+                if 2 <= col <= 5:
+                    score += 1
+                    
+            elif ficha == 3:  # ai ficha reina
+                score += 15  # Valor más alto para reinas
+                # Penalización por reina atrapada en esquina
+                if (row == 0 or row == 7) and (col == 0 or col == 7):
+                    score -= 3
+                    
+            elif ficha == 2:  # jdr ficha normal
+                score -= 5
+                # Penalización por estar cerca de coronar (fila 0 o 1)
+                if row <= 2:
+                    score -= 2
+                # Bonus para jugador por estar en el centro
+                if 2 <= col <= 5:
+                    score -= 1
+                    
+            elif ficha == 4:  # jdr ficha reina
+                score -= 15  # Valor más alto para reinas
+                # Bonus por reina en esquina
+                if (row == 0 or row == 7) and (col == 0 or col == 7):
+                    score += 3
+    
+    # Bonus por cantidad de fichas (para favorecer intercambios cuando se está ganando)
+    fichas_ai = sum(row.count(1) + row.count(3) for row in tablero)
+    fichas_jugador = sum(row.count(2) + row.count(4) for row in tablero)
+    
+    if fichas_ai > fichas_jugador:
+        score += (fichas_ai - fichas_jugador) * 2
+    elif fichas_ai < fichas_jugador:
+        score -= (fichas_jugador - fichas_ai) * 2
+    
+    return score
+
+def analizar_tablero_capturas(tablero):
     score = 0
     for fila in tablero:
         for ficha in fila:
@@ -350,7 +398,7 @@ def analizar_tablero(tablero):
                 score -= 2
     return score
 
-
+#todos los movimientos posibles del jugador en turno
 def analizar_TodosMov(tablero,turno):
     movimientos = []
 
@@ -358,46 +406,104 @@ def analizar_TodosMov(tablero,turno):
         for col in range(cons.COL):
             ficha = tablero[row][col]
             if (turno == 1 and ficha in (1, 3)) or (turno == 2 and ficha in (2, 4)):
-
-                mov_posible = calcular_posmov(row, col)
+                
+                mov_posible = calcular_posmov(row, col , solo_capturas=True)
+                if not mov_posible:
+                    mov_posible = calcular_posmov(row, col)
                 for mov in mov_posible:
-                    
+                    if turno == 1:  # Solo mostrar animación si es la IA
+                         draw_mover((row, col), [mov])
                     tablero_copia = sobreponer_mov(tablero,(row,col),mov)
                     movimientos.append((tablero_copia,(row,col),mov))
     return movimientos
 
-
-def minimax(tablero, depth, isMaximaxing):
+''''''
+def minimax(tablero, depth, isMaximizing, alpha=float('-inf'), beta=float('inf')):
+    """
+    Implementación de Minimax con poda alpha-beta
+    Args:
+        tablero: Estado actual del tablero
+        depth: Profundidad máxima de búsqueda
+        isMaximizing: True si es el turno de la IA (maximizar), False si es del jugador (minimizar)
+        alpha: Mejor valor hasta ahora para el maximizador
+        beta: Mejor valor hasta ahora para el minimizador
+    Returns:
+        tuple: (valor de evaluación, mejor movimiento)
+    """
+    # Condición de terminación
     if depth == 0:
-        return analizar_tablero(tablero), tablero
-
-    turno_actual = 1 if isMaximaxing else 2
-    movimientos = analizar_TodosMov(tablero, turno_actual)
-
-    #movimientos = analizar_TodosMov(tablero, turno)
+        return analizar_tablero(tablero), None
     
+    # Obtener todos los movimientos posibles
+    turno_actual = 1 if isMaximizing else 2
+    movimientos = analizar_TodosMov(tablero, turno_actual)
+    
+    # Si no hay movimientos posibles
     if not movimientos:
-        return analizar_tablero(tablero), tablero
-
+        return analizar_tablero(tablero), None
+    
     mejor_mov = None
-
-    if isMaximaxing:
+    
+    if isMaximizing:
         maxEval = float('-inf')
         for mov in movimientos:
-            evaluacion, _ = minimax(mov[0], depth - 1, False)
+            tablero_copia, origen, destino = mov
+            evaluacion, _ = minimax(tablero_copia, depth-1, False, alpha, beta)
+            
+            # Bonus por capturas (sin modificar calcular_posmov)
+            if abs(destino[0] - origen[0]) >= 2:  # Es una captura
+                evaluacion += 1  # Pequeño bonus por capturar
+                
             if evaluacion > maxEval:
                 maxEval = evaluacion
                 mejor_mov = mov
+                
+            # Poda alpha-beta
+            alpha = max(alpha, evaluacion)
+            if beta <= alpha:
+                break  # Poda beta
+                
         return maxEval, mejor_mov
     else:
         minEval = float('inf')
         for mov in movimientos:
-            evaluacion, _ = minimax(mov[0], depth - 1, True)
+            tablero_copia, origen, destino = mov
+            evaluacion, _ = minimax(tablero_copia, depth-1, True, alpha, beta)
+            
+            # Penalización por permitir capturas
+            if abs(destino[0] - origen[0]) >= 2:  # Es una captura
+                evaluacion -= 1  # Pequeña penalización
+                
             if evaluacion < minEval:
                 minEval = evaluacion
                 mejor_mov = mov
+                
+            # Poda alpha-beta
+            beta = min(beta, evaluacion)
+            if beta <= alpha:
+                break  # Poda alpha
+                
         return minEval, mejor_mov
 
+def draw_mover(origen, valid_moves):
+    fila, col = origen
+    x = cons.BOARD_POSICION[0] + col * cons.CASILLA_SIZE + cons.CASILLA_SIZE // 2
+    y = cons.BOARD_POSICION[1] + fila * cons.CASILLA_SIZE + cons.CASILLA_SIZE // 2
+
+    # Dibujar tablero y fichas actualizadas
+    tablero()
+
+    # Dibujar círculo alrededor de la ficha que está considerando mover
+    pygame.draw.circle(ventana, cons.MORADO, (x, y), 25, 4)
+
+    # Dibujar posibles movimientos de esa ficha
+    for r, c in valid_moves:
+        x_dest = cons.BOARD_POSICION[0] + c * cons.CASILLA_SIZE + cons.CASILLA_SIZE // 2
+        y_dest = cons.BOARD_POSICION[1] + r * cons.CASILLA_SIZE + cons.CASILLA_SIZE // 2
+        pygame.draw.circle(ventana, cons.MORADO, (x_dest, y_dest), 10)
+
+    pygame.display.update()
+    pygame.time.delay(50)
 
 inicializar_tablero()
 
@@ -431,9 +537,9 @@ while run:
 
                     if FICHA_SELECCIONADA:
                         if (row, col) in POSIBLE_MOV:
-                            score_antes = analizar_tablero(tablero_matriz)
+                            score_antes = analizar_tablero_capturas(tablero_matriz)
                             mover_fichas(FICHA_SELECCIONADA, (row, col))
-                            score_despues = analizar_tablero(tablero_matriz)
+                            score_despues = analizar_tablero_capturas(tablero_matriz)
                             coronar_fichas()
                             FICHA_SELECCIONADA = None
                             POSIBLE_MOV = []
@@ -478,6 +584,7 @@ while run:
 
     # turno ia
     if turno == 1:
+        
         boton = tablero()  
         pygame.display.update()
         pygame.time.delay(700)  
@@ -488,7 +595,7 @@ while run:
         if mejor_movimiento:
             _, origen, destino = mejor_movimiento
             ficha = tablero_matriz[origen[0]][origen[1]]
-
+            print("is mueve ficha", ficha, "de", origen, "a", destino)
             if fichas_turno(ficha, 1):
                 mover_fichas(origen, destino)
                 coronar_fichas()
@@ -512,6 +619,7 @@ while run:
                 print("⚠️ Movimiento inválido de IA (ficha no es amarilla)")
         else:
             print("⚠️ La IA no encontró ningún movimiento posible")
+            ganador(winner)
 
     boton = tablero()
     pygame.display.update()

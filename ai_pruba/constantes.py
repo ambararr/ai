@@ -25,6 +25,7 @@ VERDE = (55, 196, 7)
 VERDE_NEON = (50, 200, 50)
 CAFE_BOTON = (99, 53, 11 )
 BORDE_CIR = (255, 0, 0)
+MORADO = (102, 0, 161)
 MOV = (0, 0, 255)
 ROWS = 8
 COL = 8
