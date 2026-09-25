@@ -5,7 +5,7 @@
 
 Juego de damas desarrollado en Python con Pygame. Permite jugar una partida contra una inteligencia artificial desde una interfaz gráfica.
 
-![Captura del juego]
+
 
 ## ¿Qué hace el proyecto?
 
