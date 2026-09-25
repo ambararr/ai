@@ -13,6 +13,10 @@ El jugador controla las fichas verdes y se enfrenta a las fichas amarillas, cont
 
 Para elegir sus jugadas, la IA analiza posibles movimientos mediante el algoritmo **minimax con poda alfa-beta**. Este proyecto nos permitió aplicar lógica de programación, manejo de eventos, representación de un tablero y búsqueda de decisiones en un juego.
 
+## Demostración
+
+![Partida de damas contra la IA](dmasgif.gif)
+
 ## Funcionalidades
 
 - Partida de damas entre un jugador y la computadora.
