@@ -15,7 +15,7 @@ Para elegir sus jugadas, la IA analiza posibles movimientos mediante el algoritm
 
 ## Demostración
 
-![Partida de damas contra la IA](dmasgif.gif)
+<img src="dmasgif.gif" alt="Partida de damas contra la IA" width="400">
 
 ## Funcionalidades
 
